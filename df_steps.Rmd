@@ -1,0 +1,204 @@
+---
+title: "dataframe for analysis"
+author: "Irina Klein"
+date: "10/31/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Data uploading and cleaning
+
+```{r}
+setwd("~/CSP571ProjectGroup")
+incident_event_log <- read_csv("incident_event_log_difftime.csv", na = c("?", "NA"))
+print(incident_event_log,width = 1000,n = 5)
+```
+
+We will only consider observations that have incident_state != 'Closed', since we want to predict the resolution time while incident is still not closed. To check whether all the incidents in the dataset are closed:
+
+```{r}
+#group rows by status
+incident_event_log %>% group_by(incident_state) %>% summarise(n = n())
+
+# number of unique incs where state != 'closed'
+incident_event_log %>%  filter(incident_state != 'Closed') %>% group_by(number) %>% summarise(n = n()) %>% summarise(n = n()) 
+
+# number of unique incs where state == 'closed'
+incident_event_log %>%  filter(incident_state == 'Closed') %>% group_by(number) %>% summarise(n = n()) %>% summarise(n = n())
+
+#note that incident can be closed more than once 
+incident_event_log %>%  filter(incident_state == 'Closed')  %>% summarise(n = n()) 
+
+closed_more_than_once <- incident_event_log %>%  filter(incident_state == 'Closed') %>% group_by(number) %>% summarise(n = n()) %>% filter(n > 1) %>% select(number)
+closed_more_than_once_v <- as.vector(t(closed_more_than_once))
+```
+
+According to [ITIL Incident Management standards](https://en.wikipedia.org/wiki/Incident_management_(ITSM)), incidents should not be closed more than once. We will consider the cases when incident is in status 'closed' more than once as exceptions and will exclude them from the analysis. 
+
+Incidents with status logs = '-100' we will replace with 'Active' status, since they are not closed and -100 does not seem to have a special meaning. 
+```{r}
+# number of unique incs where state == '-100'
+incident_event_log %>%  filter(incident_state == '-100') %>% group_by(number) %>% summarise(n = n()) 
+incident_event_log %>% filter(number == 'INC0028089')
+incident_event_log %>% filter(number == 'INC0030413')
+```
+
+
+The final data set in terms of the observations: 
+```{r}
+incident_event_log <- incident_event_log %>%
+     mutate(incident_state = replace(incident_state, incident_state == '-100', 'Active'))  %>% 
+     filter(!number %in% closed_more_than_once_v) %>% 
+    filter(!incident_state == 'Closed')
+
+#group rows by status
+incident_event_log %>% group_by(incident_state) %>% summarise(n = n())
+```
+
+
+We will remove the columns: active,caller_id, opened_by, opened_at, sys_created_at, sys_created_by, sys_updated_at, cmdb_ci, notify, u_priority_confirmation, rfc, caused_by, vendor, resolved_by, resolved_at, closed_at
+```{r}
+## active columns
+incident_event_log %>% group_by(active) %>% summarise(n = n())
+incident_event_log %>% filter(active == FALSE) # error
+incident_event_log %>% filter(incident_state == 'Resolved')
+
+## caller_id - can differ
+incident_event_log %>% group_by(caller_id) %>% summarise(n = n())
+
+## opened_by - does not matter in our analysis
+incident_event_log %>% group_by(opened_by) %>% summarise(n = n())
+
+## sys_created_by - as factor. Support engineer who submitted the **first** log.
+incident_event_log %>% group_by(sys_created_by) %>% summarise(n = n())
+
+## sys_created_by - as factor. Support engineer who submitted the **first** log.
+incident_event_log %>% group_by(sys_created_by) %>% summarise(n = n())
+
+## cmdb_ci - unknown attribute
+incident_event_log %>% group_by(cmdb_ci) %>% summarise(n = n())
+
+## u_priority_confirmation - unknown attribute
+incident_event_log %>% group_by(u_priority_confirmation) %>% summarise(n = n())
+
+## notify
+incident_event_log %>% group_by(notify) %>% summarise(n = n())
+
+## rfc - unknown attribute
+incident_event_log %>% group_by(rfc) %>% summarise(n = n())
+
+## vendor - does not seem relevant in the analysis.
+incident_event_log %>% group_by(vendor) %>% summarise(n = n())
+
+## caused_by - all NAs
+incident_event_log %>% group_by(caused_by) %>% summarise(n = n())
+
+
+```
+
+We will exclude for now (might consider later): location, u_symptom, knowledge
+
+```{r}
+## location - does not seem relevant in this analysis. There are NAs.
+incident_event_log %>% group_by(location) %>% summarise(n = n())
+
+## u_symptom - seems to an additional note that may or may not be included in an incident. There are 26K NAs.
+incident_event_log %>% group_by(u_symptom) %>% summarise(n = n())
+incident_event_log %>% group_by(category, subcategory,u_symptom ) %>% summarise(n = n())
+
+## knowledge - unknown attribute
+incident_event_log %>% group_by(knowledge) %>% summarise(n = n())
+
+```
+
+
+Keep for analysis: number, incident_state, reassignment_count, reopen_count, sys_mod_count, made_sla, sys_updated_by, contact_type, category, subcategory.
+
+```{r}
+## reassignment_count - change of group
+incident_event_log %>% filter(number == 'INC0000065') %>% select(number, incident_state, reassignment_count, assignment_group)
+
+## reopen_count - after status 'resolved'
+incident_event_log %>% filter(reopen_count != 0)
+incident_event_log %>% filter(number == 'INC0000294') %>% select(number, incident_state, reopen_count)
+
+## sys_mod_count - each new log 
+incident_event_log %>% filter(sys_mod_count != 0)
+incident_event_log %>% filter(number == 'INC0000047') %>% select(number, incident_state, sys_mod_count)
+
+    # note: sys_mod_count is not always +1. Will leave as is.
+    incident_event_log %>% filter(number == 'INC0000045') %>% select(number, incident_state, sys_mod_count)
+
+## made_sla - not that many observations
+incident_event_log %>% group_by(made_sla) %>% summarise(n = n())
+incident_event_log %>% filter(made_sla == FALSE)
+
+## sys_updated_by - as factor. Support engineer who submitted the log. Will assume that the engineers will stay the same.
+incident_event_log %>% group_by(sys_updated_by) %>% summarise(n = n())
+
+## contact_type - factor
+incident_event_log %>% group_by(contact_type) %>% summarise(n = n())
+
+## category - factor. There are NAs.
+incident_event_log %>% group_by(category) %>% summarise(n = n())
+
+## subcategory - factor. One subcategory can appear on more than one category. Should be analysed separately from category.
+#There are NAs.
+incident_event_log %>% group_by(category, subcategory) %>% summarise(n = n()) %>% group_by(subcategory) %>% summarise(n = n()) %>% filter(n >1)
+
+incident_event_log %>% group_by(category, subcategory) %>% summarise(n = n()) %>% filter(subcategory == 'Subcategory 102')
+incident_event_log %>% group_by(category, subcategory) %>% summarise(n = n()) %>% filter(subcategory == 'Subcategory 177')
+
+## urgency
+incident_event_log %>% group_by(urgency) %>% summarise(n = n())
+
+## priority
+incident_event_log %>% group_by(priority) %>% summarise(n = n())
+
+## impact
+incident_event_log %>% group_by(impact) %>% summarise(n = n())
+```
+
+Transform for analysis: problem_id,
+```{r}
+## problem_id - turn to Boolean: problems exists or not
+incident_event_log %>% group_by(problem_id) %>% summarise(n = n())
+```
+
+Final data set in terms of the predictor variables: 
+```{r}
+incident_event_log <- incident_event_log %>%
+    select(number, incident_state,reassignment_count, reopen_count, sys_mod_count, made_sla, sys_updated_by, contact_type, category, subcategory, problem_id,resolved_updated_diff ) %>%
+     mutate(problem_id = if_else(is.na(problem_id),0,1))
+head(incident_event_log)
+```
+
+## NAs
+
+In the resulting dataframe the only variables with missing values are the category and subcategory columns. Even though for some of the observations we could assume the category is the same as in later observations for the same incident, we will not do that. Since it is possible for an incident to be created without a category/subcategory we will treat NA as a separate factor (base factor).
+```{r}
+colSums(is.na(incident_event_log))
+incident_event_log %>% filter(is.na(category))
+incident_event_log %>% filter(number == 'INC0108121')
+
+incident_event_log  <- incident_event_log %>%
+    mutate(category = replace(category, is.na(category), "None"), subcategory = replace(subcategory, is.na(subcategory), "None")) 
+
+```
+
+
+## Save dataframe
+
+
+```{r}
+#setwd("~/CSP571ProjectGroup")
+#write_csv(incident_event_log, "df.csv")
+
+```
+
