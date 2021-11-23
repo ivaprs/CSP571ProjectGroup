@@ -165,7 +165,8 @@ incident_event_log %>% group_by(priority) %>% summarise(n = n())
 incident_event_log %>% group_by(impact) %>% summarise(n = n())
 ```
 
-Transform for analysis: problem_id,
+Transform for analysis: problem_id.
+
 ```{r}
 ## problem_id - turn to Boolean: problems exists or not
 incident_event_log %>% group_by(problem_id) %>% summarise(n = n())
@@ -174,7 +175,7 @@ incident_event_log %>% group_by(problem_id) %>% summarise(n = n())
 Final data set in terms of the predictor variables: 
 ```{r}
 incident_event_log <- incident_event_log %>%
-    select(number, incident_state,reassignment_count, reopen_count, sys_mod_count, made_sla, sys_updated_by, contact_type, category, subcategory, problem_id,resolved_updated_diff ) %>%
+    select(number, incident_state,reassignment_count, reopen_count, sys_mod_count, made_sla, sys_updated_by, contact_type, category, subcategory, problem_id,urgency,impact,priority,resolved_updated_diff) %>%
      mutate(problem_id = if_else(is.na(problem_id),0,1))
 head(incident_event_log)
 ```
@@ -199,6 +200,5 @@ incident_event_log  <- incident_event_log %>%
 ```{r}
 #setwd("~/CSP571ProjectGroup")
 #write_csv(incident_event_log, "df.csv")
-
 ```
 
