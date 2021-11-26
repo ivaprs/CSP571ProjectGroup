@@ -1,0 +1,54 @@
+---
+title: 'R Notebook: random forest on dataset with classes - full modeal'
+output: pdf_document
+---
+
+```{r}
+library(caret)
+library(ggplot2)
+library(randomForest)
+library(tidyverse)
+```
+
+```{r}
+setwd("~/CSP571ProjectGroup")
+df <- read_csv("df_with_class.csv")
+df %>% group_by(class) %>% summarise(n = n())
+```
+
+```{r}
+df = subset(df, select=-c(sys_updated_by, number, subcategory))
+df$class = as.factor(df$class)
+```
+
+```{r}
+# try on the full data set (df_small from previous version of the code)
+df_small = df
+train_idx = createDataPartition(df_small$resolved_updated_diff, p = 0.8, list=F)
+df_train = df_small[train_idx,]
+df_test = df_small[-train_idx,]
+# try a randomforest model
+rf_mod = randomForest(class~., data=df_train, ntree=1000)
+df_test_X = subset(df_test, select=-c(class))
+df_test_y = df_test$class
+pred = predict(rf_mod, df_test)
+
+
+columns = c("pred", "actual")
+acc_df = data.frame(matrix(nrow=nrow(df_test), ncol = length(columns)))
+colnames(acc_df) = columns
+acc_df$pred = c(pred)
+acc_df$actual = c(df_test_y)
+#acc_df
+acc = nrow(acc_df[acc_df$pred == acc_df$actual,])
+acc/nrow(df_test)
+table(pred, df_test$class)
+```
+
+
+
+```{r}
+summary(rf_mod)
+```
+
+
