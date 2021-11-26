@@ -1,0 +1,63 @@
+---
+title: "Untitled"
+author: "Irina Klein"
+date: "11/26/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(caret)
+library(tree)
+```
+
+## Category
+
+Perhaps we should remove the observations for which the category of the issue is not one of the frequent ones.
+
+```{r}
+setwd("~/CSP571ProjectGroup")
+df <- read_csv("df.csv")
+## category
+#df  %>% group_by(category) %>% summarise(n = n(), share = round(n()/114660,3)) %>% arrange(n) 
+
+## subcategory
+#n <- df  %>% group_by(subcategory) %>% summarise(n = n(), share = round(n()/114660,3)) %>% arrange(n) 
+
+## both
+(keepnum <- df  %>% group_by(category, subcategory) %>% summarise(n = n(), share = round(n()/114660,3)) %>% arrange(n) %>% filter(share > 0.005) %>% summarise(n = sum(n)) %>% summarise(n = sum(n)) )
+
+ keepnum/nrow(df)
+ 
+df_75 <- df %>%
+group_by(category, subcategory) %>%
+mutate(m = n()/114660) %>%
+ungroup() %>%
+filter(m > 0.005)
+```
+
+If we remove all the observations for which category&subcategory combinations appear in less than in 0.5% observations, we end up with 76% of observations.
+
+
+# Tree methods 
+
+```{r}
+# test run on the first 1000 rows
+df_1000 <- df_75[1:1000,]
+
+#as.factor
+cols <- c("made_sla", "category", "incident_state", "contact_type", "subcategory", "urgency", "impact","priority", "problem_id")
+df_1000[cols] <- lapply(df_1000[cols], factor)
+
+#tree
+tree.incs <- tree(resolved_updated_diff ~ . -number-m-sys_updated_by, df_1000)
+summary(tree.incs)
+tree.incs
+```
+
+The deviance is very large, meaning that the predictions would not be accurate.
+We will classify all the resolutions time to a specified set of buckets (<2h, <1day, ect.) and build a classification tree. 
+
