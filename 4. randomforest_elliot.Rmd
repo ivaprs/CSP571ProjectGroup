@@ -44,7 +44,7 @@ df[df$resolved_updated_diff > 8640 &  df$resolved_updated_diff <= 10080,]$class 
 df[df$resolved_updated_diff > 10080 &  df$resolved_updated_diff <= 11520,]$class = '8days'
 df[df$resolved_updated_diff > 11520 &  df$resolved_updated_diff <= 14400,]$class = '10days'
 df[df$resolved_updated_diff > 14400 &  df$resolved_updated_diff <= 20160,]$class = '14days'
-df[df$resolved_updated_diff > 20160 &  df$resolved_updated_diff <= 40320,]$class = '14days'
+df[df$resolved_updated_diff > 20160 &  df$resolved_updated_diff <= 40320,]$class = '28days'
 df[df$resolved_updated_diff > 40320,]$class = '>14days'
 ```
 
