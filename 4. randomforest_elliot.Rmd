@@ -1,0 +1,92 @@
+---
+title: 'R Notebook: random forest on dataset with classes'
+output: pdf_document
+---
+
+```{r}
+library(caret)
+library(ggplot2)
+```
+
+
+```{r}
+df = read.csv("./df.csv")
+```
+
+```{r}
+min(df$resolved_updated_diff)
+max(df$resolved_updated_diff)
+plot(density(df$resolved_updated_diff))
+median(df$resolved_updated_diff)
+mean(df$resolved_updated_diff)
+IQR(df$resolved_updated_diff)
+sd(df$resolved_updated_diff)
+```
+
+```{r}
+# make classes for time
+# class needs to have at least 2000 observations within it
+df$class = "TBA"
+df[df$resolved_updated_diff == 0,]$class = '0mins'
+df[df$resolved_updated_diff > 0 &  df$resolved_updated_diff <= 5,]$class = '5mins'
+df[df$resolved_updated_diff > 5 &  df$resolved_updated_diff <= 10,]$class = '10mins'
+df[df$resolved_updated_diff > 10 &  df$resolved_updated_diff <= 30,]$class = '30mins'
+df[df$resolved_updated_diff > 30 &  df$resolved_updated_diff <= 60,]$class = '1hr'
+df[df$resolved_updated_diff > 60 &  df$resolved_updated_diff <= 180,]$class = '3hr'
+df[df$resolved_updated_diff > 180 &  df$resolved_updated_diff <= 360,]$class = '6hr'
+df[df$resolved_updated_diff > 360 &  df$resolved_updated_diff <= 1440,]$class = '1day'
+df[df$resolved_updated_diff > 1440 &  df$resolved_updated_diff <= 2880,]$class = '2days'
+df[df$resolved_updated_diff > 2880 &  df$resolved_updated_diff <= 4320,]$class = '3days'
+df[df$resolved_updated_diff > 4320 &  df$resolved_updated_diff <= 5760,]$class = '4days'
+df[df$resolved_updated_diff > 5760 &  df$resolved_updated_diff <= 7200,]$class = '5days'
+df[df$resolved_updated_diff > 7200 &  df$resolved_updated_diff <= 8640,]$class = '6days'
+df[df$resolved_updated_diff > 8640 &  df$resolved_updated_diff <= 10080,]$class = '7days'
+df[df$resolved_updated_diff > 10080 &  df$resolved_updated_diff <= 11520,]$class = '8days'
+df[df$resolved_updated_diff > 11520 &  df$resolved_updated_diff <= 14400,]$class = '10days'
+df[df$resolved_updated_diff > 14400 &  df$resolved_updated_diff <= 20160,]$class = '14days'
+df[df$resolved_updated_diff > 20160 &  df$resolved_updated_diff <= 40320,]$class = '14days'
+df[df$resolved_updated_diff > 40320,]$class = '>14days'
+```
+
+```{r}
+#write.csv(df,"./df_with_class.csv", row.names = T)
+df = read.csv("./df_with_class.csv")
+```
+
+```{r}
+df = subset(df, select=-c(sys_updated_by, number, subcategory))
+df$class = as.factor(df$class)
+```
+
+```{r}
+#install.packages("randomForest")
+library(randomForest)
+```
+
+
+```{r}
+# try on small data set
+df_small = df[1:5000,]
+train_idx = createDataPartition(df_small$resolved_updated_diff, p = 0.8, list=F)
+df_train = df_small[train_idx,]
+df_test = df_small[-train_idx,]
+# try a randomforest model
+rf_mod = randomForest(class~., data=df_train, ntree=1000)
+df_test_X = subset(df_test, select=-c(class))
+df_test_y = df_test$class
+pred = predict(rf_mod, df_test)
+
+columns = c("pred", "actual")
+acc_df = data.frame(matrix(nrow=nrow(df_test), ncol = length(columns)))
+colnames(acc_df) = columns
+acc_df$pred = c(pred)
+acc_df$actual = c(df_test_y)
+acc_df
+acc = nrow(acc_df[acc_df$pred == acc_df$actual,])
+acc/nrow(df_test)
+```
+```{r}
+summary(rf_mod)
+```
+
+
