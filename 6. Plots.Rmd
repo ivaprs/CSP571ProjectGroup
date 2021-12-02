@@ -1,0 +1,30 @@
+---
+title: "Plots"
+author: "Muhammad Jamal Tariq"
+date: "12/1/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+df<-read.csv("df_with_class.csv",sep=",",header=TRUE)
+ggplot(df, aes(impact,resolved_updated_diff,fill=class)) + geom_bar(stat="identity", position="dodge")+ggtitle("Impact vs Resolved Updated Difference") + xlab("Impact") + ylab("Resolved Updated Difference")
+ggplot(df, aes(urgency,resolved_updated_diff,fill=class)) + geom_bar(stat="identity", position="dodge")+ggtitle("Urgency vs Resolved Updated Difference") + xlab("Urgency") + ylab("Resolved Updated Difference")
+ggplot(df, aes(priority,resolved_updated_diff,fill=class)) + geom_bar(stat="identity", position="dodge")+ggtitle("Priority vs Resolved Updated Difference") + xlab("Priority") + ylab("Resolved Updated Difference")
+ggplot(df, aes(incident_state,resolved_updated_diff,fill=class)) + geom_bar(stat = "identity", position="dodge")+ggtitle("Incident State vs Resolved Updated Difference") + xlab("Incident State") + ylab("Resolved Updated Difference")
+one <- table(df$urgency,df$impact)
+barplot(one, main="Urgency vs Impact", xlab="Impact",ylab="Urgency", legend = rownames(one),beside=TRUE)
+two <- table(df$priority,df$impact)
+barplot(one, main="Priority vs Impact", xlab="Impact",ylab="Priority", legend = rownames(two),beside=TRUE)
+four <- table(df$urgency,df$priority)
+barplot(one, main="Urgency vs Priority", xlab="Priority",ylab="Urgency", legend = rownames(four),beside=TRUE)
+five <- table(df$incident_state,df$urgency)
+barplot(one, main="Incident State vs Urgency", xlab="Urgency",ylab="Incident State", legend = rownames(five),beside=TRUE)
+six <- table(df$incident_state,df$priority)
+barplot(one, main="Incident State vs Priority", xlab="Priority",ylab="Incident State", legend = rownames(six),beside=TRUE)
+seven <- table(df$incident_state,df$impact)
+barplot(one, main="Incident State vs Impact", xlab="Impact",ylab="Incident State", legend = rownames(seven),beside=TRUE)
+```
