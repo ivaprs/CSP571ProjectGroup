@@ -1,5 +1,5 @@
 ---
-title: 'R Notebook: random forest on dataset with classes - full modeal'
+title: 'wide intervals'
 output: pdf_document
 ---
 
@@ -12,7 +12,7 @@ library(tidyverse)
 
 ```{r}
 setwd("~/CSP571ProjectGroup")
-df <- read_csv("df_with_class.csv")
+df <- read_csv("df_with_class_wide.csv")
 df %>% group_by(class) %>% summarise(n = n())
 ```
 

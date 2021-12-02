@@ -1,0 +1,94 @@
+---
+ title: '5 fold cross validation'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(caret)
+library(ggplot2)
+library(randomForest)
+library(tidyverse)
+setwd("~/CSP571ProjectGroup")
+df <- read_csv("df_with_class_wide.csv")
+
+df = subset(df, select=-c(sys_updated_by, number, subcategory, resolved_updated_diff))
+df = subset(df, select=-1)
+df$class = as.factor(df$class)
+df %>% group_by(class) %>% summarise(n = n())
+```
+
+Create 5 fold sets 
+
+```{r}
+kfold <- createFolds(df$class, k = 5, list = FALSE, returnTrain = FALSE)
+cv.acc.5 <- as.matrix(rep(0, 5))
+```
+
+
+We will perform the CV manually as running the tree takes a long time and we want to control the process. 
+
+```{r}
+for (i in 1:5) 
+{
+n = i
+df_train = df[!(kfold == n),]
+df_test = df[kfold == n,]
+
+rf_mod = randomForest(class~., data=df_train, ntree=1000)
+df_test_X = subset(df_test, select=-c(class))
+df_test_y = df_test$class
+pred = predict(rf_mod, df_test)
+
+columns = c("pred", "actual")
+acc_df = data.frame(matrix(nrow=nrow(df_test), ncol = length(columns)))
+colnames(acc_df) = columns
+acc_df$pred = c(pred)
+acc_df$actual = c(df_test_y)
+
+#acc_df
+acc = nrow(acc_df[acc_df$pred == acc_df$actual,])
+cv.acc.5[n,1] <- round(acc/nrow(df_test),5)
+}
+
+cv.acc.5
+mean(cv.acc.5)
+```
+
+
+Without the zeros.
+
+```{r}
+df_no_zeros <- df[df$class != '0mins',]
+kfold <- createFolds(df_no_zeros$class, k = 5, list = FALSE, returnTrain = FALSE)
+cv.acc.5_no_zero <- as.matrix(rep(0, 5))
+df_no_zeros$class = as.character(df_no_zeros$class)
+df_no_zeros$class = as.factor(df_no_zeros$class)
+
+
+for (i in 1:5) 
+{
+    n = i
+df_train = df_no_zeros[!(kfold == n),]
+df_test = df_no_zeros[kfold == n,]
+
+rf_mod <- randomForest(class~., data=df_train, ntree=100)
+df_test_X = subset(df_test, select=-c(class))
+df_test_y = df_test$class
+pred = predict(rf_mod, df_test)
+
+columns = c("pred", "actual")
+acc_df = data.frame(matrix(nrow=nrow(df_test), ncol = length(columns)))
+colnames(acc_df) = columns
+acc_df$pred = c(pred)
+acc_df$actual = c(df_test_y)
+
+#acc_df
+acc = nrow(acc_df[acc_df$pred == acc_df$actual,])
+cv.acc.5_no_zero[n,1] <- round(acc/nrow(df_test),5)
+}
+
+
+```
+
+
+
