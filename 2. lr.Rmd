@@ -1,0 +1,88 @@
+---
+date: "11/23/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r cars}
+library(tidyverse)
+library(caret)
+df <- read_csv("df.csv")
+```
+
+```{r}
+attach(df)
+
+df %>% 
+    mutate(resolved_updated_diff= ifelse(resolved_updated_diff > 50, 50, resolved_updated_diff)) %>% 
+    ggplot(aes(resolved_updated_diff)) +
+    geom_histogram(bins = 30, col = "black", fill = "cornflowerblue")
+
+df %>% 
+    ggplot(aes(resolved_updated_diff)) +
+    geom_histogram(bins = 30, col = "black", fill = "cornflowerblue")
+
+df %>%  filter(resolved_updated_diff > 100000)
+
+df %>% filter(number == 'INC0000341') %>% select(number, incident_state, resolved_updated_diff)
+```
+
+The one observation where resolution time is less than zero will be considered an outlier. Observations with high resolution time of more than 4 months do not seem like outliers. 
+
+```{r}
+df <- df %>%  filter(resolved_updated_diff >= 0)
+```
+
+
+```{r}
+dfm = subset(df, select=-c(sys_updated_by))
+train_idx = createDataPartition(dfm$resolved_updated_diff, p = 0.8, list=F)
+df_train = dfm[train_idx,]
+df_test = dfm[-train_idx,]
+
+
+lm_full_data <- lm(resolved_updated_diff ~ incident_state + reassignment_count + reopen_count +  made_sla + reopen_count + category + subcategory + problem_id + impact + urgency + priority, data = df_train)
+summary(lm_full_data)
+
+lm_full_data_v2 <- lm(resolved_updated_diff ~ incident_state + reassignment_count + reopen_count +  made_sla + reopen_count + category + problem_id + impact + urgency + priority, data = df_train)
+summary(lm_full_data_v2)
+
+
+lm_full_data_v3 <- lm(resolved_updated_diff ~ incident_state + reassignment_count + reopen_count +  made_sla + reopen_count + subcategory + problem_id + impact + urgency + priority, data = df_train)
+summary(lm_full_data_v3)
+
+lm_full_data_v4 <- lm(resolved_updated_diff ~ incident_state + reassignment_count + reopen_count +  made_sla + reopen_count + problem_id + impact + urgency + priority, data = df_train)
+summary(lm_full_data_v4)
+```
+
+
+```{r}
+z <- predict(lm_full_data_v4, df_test)
+
+plot(predict(lm_full_data_v2), residuals(lm_full_data_v2))
+plot(predict(lm_full_data_v4), residuals(lm_full_data_v4))
+```
+```{r}
+dfm$resolved_updated_diff_hours <- round((dfm$resolved_updated_diff) / 60)
+train_idx = createDataPartition(dfm$resolved_updated_diff, p = 0.8, list=F)
+df_train = dfm[train_idx,]
+df_test = dfm[-train_idx,]
+
+lm_full_data_hours <- lm(resolved_updated_diff_hours ~ incident_state + reassignment_count + reopen_count +  made_sla + reopen_count + category + subcategory + problem_id + impact + urgency + priority, data = df_train)
+summary(lm_full_data_hours)
+
+lm_full_data_hours_v2 <- lm(resolved_updated_diff_hours ~ incident_state + reassignment_count + reopen_count +  made_sla + reopen_count + category + problem_id + impact + urgency + priority, data = df_train)
+summary(lm_full_data_hours_v2)
+
+lm_full_data_hours_v3 <- lm(resolved_updated_diff_hours ~ incident_state + reassignment_count + reopen_count +  made_sla + reopen_count + subcategory + problem_id + impact + urgency + priority, data = df_train)
+summary(lm_full_data_hours_v3)
+
+lm_full_data_hours_v4 <- lm(resolved_updated_diff_hours ~ incident_state + reassignment_count + reopen_count +  made_sla + reopen_count + problem_id + impact + urgency + priority, data = df_train)
+summary(lm_full_data_hours_v4)
+```
