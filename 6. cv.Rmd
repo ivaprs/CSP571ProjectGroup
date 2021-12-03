@@ -8,6 +8,8 @@ library(caret)
 library(ggplot2)
 library(randomForest)
 library(tidyverse)
+install.packages("party")
+library(party)
 setwd("~/CSP571ProjectGroup")
 df <- read_csv("df_with_class_wide.csv")
 
@@ -87,7 +89,13 @@ acc = nrow(acc_df[acc_df$pred == acc_df$actual,])
 cv.acc.5_no_zero[n,1] <- round(acc/nrow(df_test),5)
 }
 
+#plot(rf_mod, type="simple")
+#cforest(class~ reassignment_count + sys_mod_count, data=df_train, controls=cforest_control(mtry=2, mincriterion=0))
 
+
+#install.packages("reprtree")
+#library(reprtree)
+#reprtree:::plot.getTree(rf_mod)
 ```
 
 

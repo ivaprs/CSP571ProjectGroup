@@ -13,6 +13,7 @@ library(tidyverse)
 ```{r}
 setwd("~/CSP571ProjectGroup")
 df <- read_csv("df_with_class_wide.csv")
+df %>% group_by(problem_id) %>% summarise(n = n())
 df %>% group_by(class) %>% summarise(n = n())
 ```
 
@@ -24,7 +25,7 @@ df$class = as.factor(df$class)
 
 ```{r}
 # try on the full data set (df_small from previous version of the code)
-df_small = df
+df_small = df[1:1000,]
 train_idx = createDataPartition(df_small$class, p = 0.8, list=F)
 df_train = df_small[train_idx,]
 df_test = df_small[-train_idx,]
@@ -47,9 +48,34 @@ table(pred, df_test$class)
 ```
 
 
+Visualize the tree. Confusing since there are too many rules.
 
 ```{r}
+library(reprtree)
 summary(rf_mod)
+reprtree:::plot.getTree(rf_mod)
+```
+
+
+Trying to compute the tree using cforest. Didn't work out.
+
+```{r}
+# library(party)
+# df_train$incident_state <- as.factor(df_train$incident_state)
+# df_train$made_sla <- as.factor(df_train$made_sla)
+# df_train$contact_type <- as.factor(df_train$contact_type)
+# df_train$category <- as.factor(df_train$category)
+# df_train$problem_id <- as.factor(df_train$problem_id)
+# df_train$urgency <- as.factor(df_train$urgency)
+# df_train$impact <- as.factor(df_train$impact)
+# df_train$priority <- as.factor(df_train$priority)
+# df_train$problem_id <- as.factor(df_train$problem_id)
+# 
+# 
+# rf_mod_2 <- cforest(class~ .-problem_id, data=df_train, controls=cforest_control(mtry=2, mincriterion=0))
+# summary(rf_mod_2)
+# getTree(rf_mod_2, 1, labelVar=TRUE)
+# rf_mod = randomForest(class~., data=df_train, ntree=1000)
 ```
 
 
