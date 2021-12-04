@@ -20,6 +20,7 @@ df %>% group_by(class) %>% summarise(n = n())
 df = subset(df, select=-c(sys_updated_by, number, subcategory, resolved_updated_diff))
 df = subset(df, select=-1)
 df$class = as.factor(df$class)
+names(df)
 ```
 
 ```{r}
@@ -44,6 +45,7 @@ acc_df$actual = c(df_test_y)
 acc = nrow(acc_df[acc_df$pred == acc_df$actual,])
 acc/nrow(df_test)
 table(pred, df_test$class)
+summary(rf_mod)
 ```
 
 
