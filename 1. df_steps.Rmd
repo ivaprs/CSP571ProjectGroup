@@ -191,13 +191,20 @@ incident_event_log %>% filter(number == 'INC0108121')
 incident_event_log  <- incident_event_log %>%
     mutate(category = replace(category, is.na(category), "None"), subcategory = replace(subcategory, is.na(subcategory), "None")) 
 
+
+
 ```
 
 
+```{r}
+incident_event_log <- incident_event_log %>%  filter(resolved_updated_diff >= 0)
+```
+
 ## Save dataframe
 
-
 ```{r}
+print(incident_event_log,width = 1000,n = 5)
+
 #setwd("~/CSP571ProjectGroup")
 #write_csv(incident_event_log, "df.csv")
 ```

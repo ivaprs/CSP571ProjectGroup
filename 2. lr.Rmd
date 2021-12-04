@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r cars}
 library(tidyverse)
 library(caret)
+setwd("~/CSP571ProjectGroup")
 df <- read_csv("df.csv")
 ```
 
@@ -36,7 +37,7 @@ df %>% filter(number == 'INC0000341') %>% select(number, incident_state, resolve
 The one observation where resolution time is less than zero will be considered an outlier. Observations with high resolution time of more than 4 months do not seem like outliers. 
 
 ```{r}
-df <- df %>%  filter(resolved_updated_diff >= 0)
+#df <- df %>%  filter(resolved_updated_diff >= 0) # added to first Rmd 
 ```
 
 
@@ -68,8 +69,36 @@ z <- predict(lm_full_data_v4, df_test)
 plot(predict(lm_full_data_v2), residuals(lm_full_data_v2))
 plot(predict(lm_full_data_v4), residuals(lm_full_data_v4))
 ```
+
+
+Same 4 models but in hours 
+
 ```{r}
 dfm$resolved_updated_diff_hours <- round((dfm$resolved_updated_diff) / 60)
+train_idx = createDataPartition(dfm$resolved_updated_diff_hours, p = 0.8, list=F)
+df_train = dfm[train_idx,]
+df_test = dfm[-train_idx,]
+
+lm_full_data_hours <- lm(resolved_updated_diff_hours ~ incident_state + reassignment_count + reopen_count +  made_sla + reopen_count + category + subcategory + problem_id + impact + urgency + priority, data = df_train)
+summary(lm_full_data_hours)
+
+lm_full_data_hours_v2 <- lm(resolved_updated_diff_hours ~ incident_state + reassignment_count + reopen_count +  made_sla + reopen_count + category + problem_id + impact + urgency + priority, data = df_train)
+summary(lm_full_data_hours_v2)
+
+lm_full_data_hours_v3 <- lm(resolved_updated_diff_hours ~ incident_state + reassignment_count + reopen_count +  made_sla + reopen_count + subcategory + problem_id + impact + urgency + priority, data = df_train)
+summary(lm_full_data_hours_v3)
+
+lm_full_data_hours_v4 <- lm(resolved_updated_diff_hours ~ incident_state + reassignment_count + reopen_count +  made_sla + reopen_count + problem_id + impact + urgency + priority, data = df_train)
+summary(lm_full_data_hours_v4)
+```
+
+
+
+Same 4 models but in days 
+
+```{r}
+dfm = subset(df, select=-c(sys_updated_by))
+dfm$resolved_updated_diff_days <- round((dfm$resolved_updated_diff) / (60*24))
 train_idx = createDataPartition(dfm$resolved_updated_diff, p = 0.8, list=F)
 df_train = dfm[train_idx,]
 df_test = dfm[-train_idx,]
